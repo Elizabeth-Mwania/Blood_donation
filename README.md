@@ -97,8 +97,8 @@ wordcloud
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/blood-donation-dashboard.git
-cd blood-donation-dashboard
+git clone https://github.com/Elizabeth-Mwania/Blood_donation.git
+cd Blood_donation
 ```
 
 2. Create a virtual environment (recommended):
@@ -114,7 +114,7 @@ pip install -r requirements.txt
 
 4. Ensure the data directory structure is set up:
 ```
-BLOOD-CAMPAIGN-DASHBOARD/
+Blood_donation/
 ├── data/
 │   ├── candidates_2019_cleaned.csv
 │   ├── data_2019_cleaned.csv
