@@ -1,0 +1,334 @@
+# Blood Donation Campaign Dashboard
+
+## 🩸 Project Overview
+
+This project implements a comprehensive blood donation campaign management system with three main components:
+
+1. **Machine Learning Model**: A sophisticated eligibility prediction model that considers various health factors, demographic information, and specific conditions to determine if a person is eligible to donate blood.
+
+2. **FastAPI Backend**: A REST API that serves the machine learning model, provides health check endpoints, and handles eligibility predictions with detailed reasoning.
+
+3. **Streamlit Dashboard**: An interactive web interface for data visualization, analysis, and eligibility prediction, allowing users to explore blood donation data and check donor eligibility.
+
+## 📋 Features
+
+### 1. Eligibility Prediction
+- Predicts whether a potential donor is eligible to donate blood based on various health factors
+- Classifies donors into three categories: Eligible, Temporarily Non-eligible, and Permanently Non-eligible
+- Provides detailed explanations for ineligibility with severity ratings
+
+### 2. Geographic Distribution
+- Visualizes donor distribution by arrondissement and neighborhood
+- Interactive maps showing regions with high/low donor participation
+- Filtering capabilities by location
+
+### 3. Health Conditions Analysis
+- Analyzes impact of health conditions on eligibility
+- Shows prevalence of various conditions among donors
+- Visualizes hemoglobin levels by gender and eligibility status
+
+### 4. Donor Profiling
+- Demographic analysis of donors by age, gender, and other factors
+- BMI distribution and its effect on eligibility
+- Identification of ideal donor characteristics
+
+### 5. Campaign Effectiveness Analysis
+- Donor retention metrics
+- Conversion rates from candidates to donors
+- Cost and ROI analysis for campaigns
+
+### 6. Data Collection Interface
+- Form for entering new donor information
+- Real-time eligibility checking of potential donors
+
+## 🔧 Technical Architecture
+
+The project follows a three-tier architecture:
+
+```
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│   Streamlit     │      │    FastAPI      │      │  ML Model &     │
+│   Dashboard     │─────▶│    Backend      │─────▶│  Data Storage   │
+│                 │      │                 │      │                 │
+└─────────────────┘      └─────────────────┘      └─────────────────┘
+       UI Layer               Service Layer           Data Layer
+```
+
+### Machine Learning Model (`improved_blood_donation_model.py`)
+- **Framework**: scikit-learn with ensemble methods (RandomForest, LightGBM)
+- **Features Engineering**: Advanced feature transformations for demographic, health, and gender-specific factors
+- **Class Imbalance Handling**: SMOTE oversampling and RandomUnderSampler
+- **Model Evaluation**: Cross-validation, ROC-AUC curves, and SHAP analysis for model interpretability
+- **Persistence**: Models, preprocessors, and encoders saved with joblib
+
+### API Layer (`api.py`)
+- **Framework**: FastAPI
+- **Input Validation**: Pydantic models with field validation
+- **Endpoints**:
+  - `/predict`: Accepts donor information and returns eligibility prediction with reasoning
+  - `/health`: Health check endpoint to verify API and model status
+- **Error Handling**: Comprehensive error handling with detailed messages
+
+### Dashboard (`dashboard_model.py`, `dashboard.py`)
+- **Framework**: Streamlit
+- **Visualization Libraries**: Plotly, Matplotlib, Seaborn
+- **Interactive Components**: Form inputs, filters, and tabs for different analyses
+- **Map Visualization**: Folium for geographic displays
+- **Data Analysis**: Pandas for data manipulation and analysis
+
+## 📚 Data Dictionary
+
+The system uses a dataset with the following key fields:
+
+| Field | Description | Type |
+|-------|-------------|------|
+| Age | Age of the donor | Integer |
+| Genre | Gender (Homme/Femme) | String |
+| Taille | Height in cm | Float |
+| Poids | Weight in kg | Float |
+| Niveau_d_etude | Education level | String |
+| Situation_Matrimoniale_SM | Marital status | String |
+| Profession | Occupation | String |
+| Arrondissement_de_residence | District of residence | String |
+| Quartier_de_Residence | Neighborhood of residence | String |
+| Nationalite | Nationality | String |
+| Religion | Religion | String |
+| A_t_il_elle_deja_donne_le_sang | Whether the person has donated blood before (Oui/Non) | String |
+| Si_oui_preciser_la_date_du_dernier_don | Date of last donation | Date |
+| Taux_dhemoglobine | Hemoglobin level | Float |
+| ELIGIBILITE AU DON. | Eligibility status | String |
+
+Additional fields track various health conditions including:
+- HIV/Hepatitis status
+- Sickle cell disease
+- Diabetes
+- Hypertension
+- Asthma
+- Heart conditions
+- Recent tattoos/scarification
+- Female-specific conditions (pregnancy, breastfeeding, etc.)
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Python 3.8+
+- pip package manager
+
+### Dependencies
+Install the required dependencies using the provided `requirements.txt` file:
+```bash
+pip install -r requirements.txt
+```
+
+### Key Libraries
+- **Data Processing**: pandas, numpy
+- **Machine Learning**: scikit-learn, imbalanced-learn, lightgbm, shap
+- **API**: fastapi, uvicorn, pydantic, joblib
+- **Dashboard**: streamlit, plotly, matplotlib, seaborn, folium
+- **Geospatial**: geopandas
+
+### Project Structure
+```
+blood-donation-dashboard/
+├── api.py                          # FastAPI backend
+├── dashboard.py                    # Main dashboard
+├── dashboard_model.py              # Eligibility prediction dashboard
+├── dashboard_map.py                # Geographic mapping dashboard
+├── improved_blood_donation_model.py # ML model definition
+├── requirements.txt                # Project dependencies
+├── data/
+│   ├── data_2019_cleaned.csv       # Main dataset
+│   ├── candidates_2019_cleaned.csv # Candidates dataset
+│   └── geoBoundaries-CMR-ADM3.geojson # Geospatial data
+├── models/                         # Saved model artifacts
+│   ├── blood_donation_model.joblib
+│   ├── label_encoder.joblib
+│   ├── preprocessor.joblib
+│   └── hemoglobin_bin_edges.joblib
+├── Images/                         # Dashboard images
+│   ├── blood2.png
+│   └── codeflow.png
+└── plots/                          # Generated visualization plots
+```
+
+## 💻 Running the Application
+
+### 1. Start the API Service
+```bash
+uvicorn api:app --reload
+```
+The API will be available at: `http://127.0.0.1:8000`
+
+### 2. Launch the Dashboard
+```bash
+streamlit run dashboard.py
+```
+This will open the main dashboard in your browser at `http://localhost:8501`
+
+Alternatively, you can run only the prediction component:
+```bash
+streamlit run dashboard_model.py
+```
+
+### 3. API Documentation
+FastAPI provides automatic documentation at:
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+
+## 🔍 Using the Dashboard
+
+### Eligibility Prediction
+1. Navigate to the "Eligibility Prediction" tab
+2. Fill in the required demographic and health information
+3. Click "Predict" to see the eligibility result
+4. Review any ineligibility reasons if present
+
+### Data Analysis
+1. Upload data files using the sidebar (files should start with "donor", "candidates", or "campaign")
+2. Use filters to narrow down the analysis by age, weight, gender, etc.
+3. Explore different tabs for various analyses:
+   - Overview: Key metrics and statistics
+   - Geographic Distribution: Spatial visualization
+   - Health Conditions: Analysis of health factors
+   - Donor Profiles: Demographic clustering
+   - Campaign Effectiveness: Performance metrics
+   - Donor Retention: Return rate analysis
+   - Sentiment Analysis: Feedback evaluation
+
+## 🧠 Machine Learning Model Details
+
+### Model Pipeline
+1. **Data Preprocessing**:
+   - Handle missing values
+   - Convert categorical variables
+   - Engineer features (BMI, age groups, hemoglobin binning)
+   - Create specialized features for female donors
+
+2. **Feature Engineering**:
+   - BMI calculation and categorization
+   - Age grouping
+   - Hemoglobin thresholds by gender
+   - Female-specific ineligibility indicators
+   - Donation history features
+   - Combined risk scoring
+
+3. **Model Training**:
+   - Balanced sampling to handle class imbalance
+   - Cross-validation for model selection
+   - Ensemble methods for better performance
+   - Hyperparameter tuning
+
+4. **Evaluation Metrics**:
+   - Accuracy, Precision, Recall, F1-score
+   - ROC-AUC curves
+   - SHAP values for feature importance
+
+### Eligibility Rules
+The model combines ML predictions with rule-based overrides for specific conditions:
+
+1. **Permanent Ineligibility** (Severity 5):
+   - HIV/Hepatitis carrier
+   - Sickle cell disease
+   - Diabetes
+   - Hypertension
+   - Asthma
+   - Heart condition
+   - Pregnancy
+
+2. **Temporary Ineligibility** (Severity 3-4):
+   - Recent tattoo or scarification
+   - Recent surgery
+   - Previous blood transfusion
+   - Currently on medication/antibiotics
+   - Recent STI
+   - Low hemoglobin levels
+   - Recent blood donation (<90 days)
+   - Menstruation within 14 days
+   - Currently breastfeeding
+   - Delivered in last 6 months
+   - Pregnancy termination in last 6 months
+
+3. **Warnings** (Severity 1-2):
+   - Underweight (BMI <18.5)
+   - Obese (BMI >30)
+   - Age outside typical range (18-65)
+
+## 🔍 API Endpoints Documentation
+
+### POST /predict
+Predicts blood donation eligibility based on donor information.
+
+**Request Body**: JSON object with donor information fields (see Data Dictionary)
+
+**Response**: JSON object with:
+- `prediction`: Eligibility status ("Eligible", "Temporairement Non-eligible", or "Definitivement Non-eligible")
+- `probability`: Array of probabilities for each class
+- `ineligibility_reasons`: Array of objects containing:
+  - `reason`: Description of the ineligibility reason
+  - `severity`: Numeric rating from 1-5 of severity
+  - `type`: "Permanent", "Temporary", or "Warning"
+
+### GET /health
+Checks if the API and model are running properly.
+
+**Response**: JSON object with:
+- `status`: API status message
+- `model_loaded`: Boolean indicating if model is loaded
+
+## 📊 Visualizations
+
+The dashboard includes various visualizations:
+
+1. **Geographic Maps**:
+   - Chloropleth maps of donor distribution
+   - Markers for donation centers
+
+2. **Health Analysis**:
+   - Bar charts of health condition prevalence
+   - Boxplots of hemoglobin levels by eligibility
+
+3. **Demographic Visualizations**:
+   - Age distribution histograms
+   - Gender distribution pie charts
+   - BMI distribution analysis
+
+4. **Campaign Performance**:
+   - Line charts for donation trends
+   - Bar charts for conversion rates
+
+## 🧪 Testing
+
+To ensure system reliability, you can run:
+
+1. **API Tests**:
+```bash
+pytest tests/test_api.py
+```
+
+2. **Model Tests**:
+```bash
+pytest tests/test_model.py
+```
+
+## 📝 Contributing
+
+To contribute to this project:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
+
+## 📜 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Team
+
+Developed by Team CodeFlow for the IndabaX Cameroon blood donation dashboard competition.
+
+## 🙏 Acknowledgments
+
+- Thanks to IndabaX Cameroon for organizing this competition
+- Special thanks to all the blood donors who contribute to saving lives
