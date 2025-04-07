@@ -2,9 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import re
-import seaborn as sns
-import matplotlib.pyplot as plt
-from datetime import datetime, date
+from datetime import datetime
 
 # Set page configuration
 #st.set_page_config(page_title="Blood Donation Dashboard", layout="wide")
@@ -84,6 +82,7 @@ def render_styles():
         </style>
         <div class="main-header">🩸 Blood Donation Campaign Dashboard</div>
     """, unsafe_allow_html=True)
+
 # Custom CSS
 st.markdown("""
     <style>
@@ -167,7 +166,7 @@ except Exception as e:
     health_conditions_display = [col.split('[')[1].split(']')[0] for col in health_condition_cols]
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["Eligibility Prediction", "Health Conditions Analysis", "Explore the Dataset"])
+tab1, tab2 = st.tabs(["Eligibility Prediction", "Health Conditions Analysis"])
 
 # Eligibility Prediction Tab
 with tab1:
@@ -221,10 +220,10 @@ with tab1:
         religion = st.selectbox("Religion", ["Chrétien", "Musulman"], index=0)
         
         donated = st.selectbox("Has Donated Before?", ["Oui", "Non"], index=0)
-        last_donation = pd.NaT if donated == "Non" else st.date_input("Last donation", min_value=date(2015, 1, 1), max_value=date.today(), value=date.today())
+        last_donation = "2000-01-01" if donated == "Non" else st.text_input("Date of Last Donation (YYYY-MM-DD)", "", help="Required if Oui")
         if donated == "Oui" and last_donation:
             try:
-                datetime.strptime(last_donation.strftime('%Y-%m-%d'), "%Y-%m-%d")
+                datetime.strptime(last_donation, "%Y-%m-%d")
             except ValueError:
                 st.error("Date must be in YYYY-MM-DD format.")
         
@@ -244,8 +243,7 @@ with tab1:
         }
         if gender == "Femme":
             st.subheader("Female-Specific Information")
-            ddr_date = st.date_input("Last DDR", min_value=date(2015, 1, 1), max_value=date.today(), value=date.today())
-            ddr_date = ddr_date.strftime('%Y-%m-%d')
+            ddr_date = st.text_input("Date of Last Menstrual Period (YYYY-MM-DD)", "", help="Format: YYYY-MM-DD")
             if ddr_date:
                 try:
                     ddr_datetime = datetime.strptime(ddr_date, "%Y-%m-%d")
@@ -344,7 +342,7 @@ with tab1:
 with tab2:
     st.header("Health Conditions Among Donors")
     try:
-        data = pd.read_csv("data/data_2019_cleaned.csv")
+        data = pd.read_csv("data_2019_cleaned.csv")
         health_stats = {}
         for col in health_condition_cols:
             count = data[col].str.lower().map({'oui': 1, 'non': 0}).sum()
@@ -352,43 +350,5 @@ with tab2:
         st.bar_chart(health_stats)
     except FileNotFoundError:
         st.error("Dataset 'data_2019_cleaned.csv' not found.")
-    except Exception as e:
-        st.error(f"Error loading dataset: {str(e)}")
-# Tab 3: Dataset Exploration
-with tab3:
-    st.header("Explore the Dataset")
-    st.markdown("This section provides insights into the dataset used to train the model.")
-
-    try:
-        df = pd.read_csv("data/data_2019_cleaned.csv")
-        st.write("Dataset Preview:")
-        st.dataframe(df.head())
-
-        # Basic statistics
-        st.subheader("Basic Statistics")
-        st.write(df.describe())
-
-        # Class distribution
-        st.subheader("Class Distribution")
-        fig, ax = plt.subplots()
-        sns.countplot(x="ELIGIBILITE AU DON.", data=df, ax=ax)
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
-
-        # Hemoglobin distribution
-        st.subheader("Hemoglobin Distribution")
-        fig, ax = plt.subplots()
-        sns.histplot(df["Taux dhemoglobine"], bins=20, kde=True, ax=ax)
-        plt.xlabel("Hemoglobin Level (g/dL)")
-        st.pyplot(fig)
-
-        # Age distribution
-        st.subheader("Age Distribution")
-        fig, ax = plt.subplots()
-        sns.histplot(df["Age"], bins=20, kde=True, ax=ax)
-        plt.xlabel("Age")
-        st.pyplot(fig)
-    except FileNotFoundError:
-            st.error("Dataset file 'data_2019_cleaned.csv' not found. Please ensure it is in the project directory.")
     except Exception as e:
         st.error(f"Error loading dataset: {str(e)}")

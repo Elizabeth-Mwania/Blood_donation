@@ -256,13 +256,16 @@ def render_sidebar():
                 
                 district_options = ['All'] + donor_candidates_birth['residence_district'].unique().tolist()
                 district = st.selectbox("District", district_options)
+                
+                eligibility_options = ["All"] + list(donor_candidates_birth["eligibility"].unique())
+                selected_eligibility = st.sidebar.selectbox("Eligibility Status", eligibility_options)
             else:
-                age_range, weight_range, gender, district = 0, 0, 'All', 'All'
+                age_range, weight_range, gender, district, selected_eligibility = 0, 0, 'All', 'All', 'All'
             
         data = [donor_candidates_birth, donors]
-        return age_range, weight_range, gender, district, data
+        return age_range, weight_range, gender, district, selected_eligibility, data
 
-def apply_filters(age_range, weight_range, gender, district, df):
+def apply_filters(age_range, weight_range, gender, district, selected_eligibility, df):
     if df[0] is not None and df[1] is not None:
         filtered_df1 = df[0].copy()
         filtered_df2 = df[1].copy()
@@ -280,6 +283,8 @@ def apply_filters(age_range, weight_range, gender, district, df):
             filtered_df1 = filtered_df1[filtered_df1['gender'] == gender]
         if 'residence_district' in filtered_df1.columns and district != 'All':
             filtered_df1 = filtered_df1[filtered_df1['residence_district'] == district]
+        if "eligibility" in filtered_df1.columns and selected_eligibility != "All":
+            filtered_df1 = filtered_df1[filtered_df1["eligibility"] == selected_eligibility]
         print("Definition of Filters OK !")
         return filtered_df1, filtered_df2
     else:
@@ -298,7 +303,7 @@ def load_geo_data(df):
 
 # Page Rendering Functions
 def home_page(donor_candidates_birth, donors):
-    st.title("Home Page")
+    #st.title("Home Page")
 
     with st.expander('**Data**'):
         st.write('**Raw Data**')
@@ -433,11 +438,11 @@ def render_overview(donor_candidates_birth, donors):
             fig_hour.update_layout(height=300)
             st.plotly_chart(fig_hour, use_container_width=True)
 
-def render_health_conditions(data, weight_range, age_range, gender, district):
+def render_health_conditions(data, weight_range, age_range, gender, district, selected_eligibility):
     st.markdown("<div class='sub-header'>Health Conditions Analysis</div>", unsafe_allow_html=True)
     donor_candidates_birth = data[0]
     if donor_candidates_birth is not None:
-        filtered_df1, filtered_df2 = apply_filters(age_range, weight_range, gender, district, data)
+        filtered_df1, filtered_df2 = apply_filters(age_range, weight_range, gender, district, selected_eligibility, data)
         charts_row = st.columns(2)
         with charts_row[0]:
             st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
@@ -566,7 +571,7 @@ def render_donor_retention(data):
         print(f'💢 Upload the data first !')
 
 def render_data_collection(geo_data):
-    st.markdown("<div class='sub-header'>Contribute to the Dapageank</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sub-header'>Contribute to the DataBank</div>", unsafe_allow_html=True)
     with st.form("new_data_form"):
         col1, col2 = st.columns(2)
         with col1:
@@ -593,7 +598,7 @@ def render_data_collection(geo_data):
                 'DDR < 14 Days','Breast Feeding','Born < 6 months','Pregnancy Stop < 6 months',
                 'Pregnant','Previous Transfusion','Have IST','Operate','Sickle Cell','Diabetic',
                 'Hypertensive','Asmatic', 'Heart Attack', 'Tattoo','Scarified','None'])
-        submit = st.form_submit_button("Add to Dapageank")
+        submit = st.form_submit_button("Add to Databank")
         
         if submit:
             new_candidate = {
@@ -610,12 +615,12 @@ def render_data_collection(geo_data):
                 new_donor = {'timestamp': datetime.now(), 'gender': gender, 'age': age, 'donation_type': 'B', 'blood_group': blood_group}
                 st.session_state.new_donors = pd.concat([st.session_state.new_donors, pd.DataFrame([new_donor])], ignore_index=True)
             
-            st.success("Data added to dapageank!")
+            st.success("Data added to databank!")
 
-    st.markdown("### New Dapageank Entries for Candidates")
+    st.markdown("### New Data Entries for Candidates")
     st.write(st.session_state.new_candidates)
 
-    st.markdown("### New Dapageank Entries for Donors")
+    st.markdown("### New Data Entries for Donors")
     st.write(st.session_state.new_donors)
     
     if len(st.session_state.new_candidates) > 0:
@@ -659,46 +664,122 @@ def render_campaign_effectiveness():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_donor_profiles(data, weight_range, age_range, gender, district):
+def render_donor_profiles(data, weight_range, age_range, gender, district, selected_eligigility):
     st.markdown("<div class='sub-header'>Donor Profile Analysis</div>", unsafe_allow_html=True)
     pg = st.navigation([st.Page("dashboard_cluster.py")])
     pg.run()
+
+    st.markdown("<div class='sub-header'>Donor Impact Simulator</div>", unsafe_allow_html=True)
+    donations = st.slider("Simulate Donations", 1, 100, 10)
+    lives_saved = donations * 3
+    st.markdown(f"<h3 style='color: #FFD700;'>Your {donations} Donations Could Save <span style='color: #B22222;'>{lives_saved}</span> Lives!</h3>", unsafe_allow_html=True)
     
-def render_geographic_distribution():
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number", value=donations, domain={'x': [0, 1], 'y': [0, 1]},
+        title={'text': "Donation Impact"},
+        gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#B22222"}, 'steps': [
+            {'range': [0, 50], 'color': "#FF8C00"}, {'range': [50, 100], 'color': "#FFD700"}]},
+    ))
+    fig.update_layout(height=400)
+    st.plotly_chart(fig, use_container_width=True)
+    
+def render_geographic_distribution(data, weight_range, age_range, gender, district, selected_eligigility):
     st.markdown("<div class='sub-header'>Geographic Distribution of Donors</div>", unsafe_allow_html=True)
     pg = st.navigation([st.Page("dashboard_map.py")])
     pg.run()
+    donor_candidates_birth = data[0]
+    if donor_candidates_birth is not None:
+        filtered_df1, filtered_df2 = apply_filters(age_range, weight_range, gender, district, selected_eligigility, data)
 
-def render_sentiment_analysis(donor_candidates_birth):
+        # Check if necessary columns exist
+        if "residence_district" in filtered_df1.columns and "residence_neighborhood" in filtered_df1.columns:
+        
+            # Distribution by Arrondissement
+            st.subheader("Distribution by District (Arrondissement)")
+            arrond_counts = filtered_df1["residence_district"].value_counts().reset_index()
+            arrond_counts.columns = ["District", "Count"]
+            
+            fig = px.bar(arrond_counts, x="District", y="Count", 
+                        color="Count", color_continuous_scale='Reds',
+                        labels={"Count": "Number of Donors", "Arrondissement": "District"},
+                        title="Donor Distribution by District")
+            fig.update_layout(xaxis={'categoryorder':'total descending'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Distribution by Quartier (Neighborhood)
+            st.subheader("Distribution by Neighborhood (Quartier)")
+            # Create a dropdown to select district for neighborhood filtering
+            district_options = ["All"] + list(filtered_df1["residence_district"].unique())
+            selected_district = st.selectbox("Select District to View Neighborhoods", district_options)
+            quartier_df = filtered_df1
+            # Filter by selected district if not "All"
+            if selected_district != "All":
+                quartier_df = filtered_df1[filtered_df1["residence_district"] == selected_district]
+                
+            # Get neighborhood counts
+            quartier_counts = quartier_df["residence_neighborhood"].value_counts().reset_index()
+            quartier_counts.columns = ["Neighborhood", "Count"]
+            
+            # Show top 20 neighborhoods to prevent overcrowding
+            quartier_counts = quartier_counts.head(20)
+            
+            fig = px.bar(quartier_counts, x="Neighborhood", y="Count", 
+                        color="Count",color_continuous_scale='Reds',
+                        labels={"Count": "Number of Donors", "Neighborhood": "Neighborhood"},
+                        title=f"Top 20 Neighborhoods by Donor Count" + 
+                            (f" in {selected_district}" if selected_district != "All" else ""))
+            fig.update_layout(xaxis={'categoryorder':'total descending'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Interactive map - If we had coordinates, we would add them here
+            st.subheader("Geographical Map (Heat Map Representation)")
+            
+            # Create a heatmap based on district data since we don't have exact coordinates
+            heatmap_data = filtered_df1["residence_district"].value_counts().reset_index()
+            heatmap_data.columns = ["District", "Donors"]
+            
+            fig = px.treemap(heatmap_data, path=["District"], values="Donors",
+                            color="Donors", color_continuous_scale='Reds',
+                            title="Heat Map of Donor Distribution by District")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("Required geographical data columns not found in the dataset.")
+
+def render_sentiment_analysis(data, weight_range, age_range, gender, district, selected_eligigility):
     st.markdown("<div class='sub-header'>Sentiment Analysis of Donor Feedback</div>", unsafe_allow_html=True)
     st.write("Analyze donor sentiments to improve campaign messaging.")
-    
-    feedback = donor_candidates_birth['other_total_ineligible_reasons'].dropna().tolist() if donor_candidates_birth is not None and 'other_total_ineligible_reasons' in donor_candidates_birth.columns else [
-        "I love donating blood, it feels great to help!", "The process was too slow, very frustrating.",
-        "Amazing staff, made me feel so welcome.", "I won’t donate again, too much hassle."
-    ]
-    sia = SentimentIntensityAnalyzer()
-    sentiments = [sia.polarity_scores(f)['compound'] for f in feedback]
-    sentiment_df = pd.DataFrame({'Feedback': feedback, 'Sentiment': sentiments})
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-        st.subheader("Sentiment Distribution")
-        fig = px.bar(sentiment_df, x='Feedback', y='Sentiment', color='Sentiment', color_continuous_scale='RdYlGn', title="Sentiment Scores")
-        fig.update_layout(height=400, xaxis={'tickangle': 45})
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
-        st.subheader("Word Cloud")
-        text = " ".join(feedback)
-        wordcloud = WordCloud(width=400, height=300, background_color='white', colormap='Reds').generate(text)
-        plt.figure(figsize=(8, 6))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis('off')
-        st.pyplot(plt)
-        st.markdown("</div>", unsafe_allow_html=True)
+    donor_candidates_birth = data[0]
+    if (donor_candidates_birth is not None):
+        filtered_df1, filtered_df2 = apply_filters(age_range, weight_range, gender, district, selected_eligigility, data)
+        feedback = filtered_df1['other_total_ineligible_reasons'].dropna().tolist() if filtered_df1 is not None and 'other_total_ineligible_reasons' in filtered_df1.columns else [
+            "I love donating blood, it feels great to help!", "The process was too slow, very frustrating.",
+            "Amazing staff, made me feel so welcome.", "I won’t donate again, too much hassle."
+        ]
+
+        sia = SentimentIntensityAnalyzer()
+        sentiments = [sia.polarity_scores(f)['compound'] for f in feedback]
+        sentiment_df = pd.DataFrame({'Feedback': feedback, 'Sentiment': sentiments})
+        if selected_eligigility == 'All':
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                st.subheader("Sentiment Distribution")
+                fig = px.bar(sentiment_df, x='Feedback', y='Sentiment', color='Sentiment', color_continuous_scale='RdYlGn', title="Sentiment Scores")
+                fig.update_layout(height=400, xaxis={'tickangle': 45})
+                st.plotly_chart(fig, use_container_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+            with col2:
+                st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                st.subheader("Word Cloud")
+                text = " ".join(feedback)
+                wordcloud = WordCloud(width=400, height=300, background_color='white', colormap='Reds').generate(text)
+                plt.figure(figsize=(8, 6))
+                plt.imshow(wordcloud, interpolation='bilinear')
+                plt.axis('off')
+                st.pyplot(plt)
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.error("No feedback data available for other categories of eligible donors.")
 
 def render_eligibility_prediction():
     pg = st.navigation([st.Page("dashboard_model.py")])
@@ -714,10 +795,11 @@ def main():
     weight_range = L[1]
     gender = L[2]
     district = L[3]
-    data = L[4]
+    selected_eligigility = L[4]
+    data = L[5]
 
     if L is not None:
-        donor_candidates_birth, donors = apply_filters(age_range, weight_range, gender, district, data)
+        donor_candidates_birth, donors = apply_filters(age_range, weight_range, gender, district, selected_eligigility, data)
         geo_data = load_geo_data(donor_candidates_birth)
     else:
         donor_candidates_birth, donors = None, None
@@ -751,17 +833,17 @@ def main():
             elif tab_name == "Overview":
                 page_functions[tab_name](donor_candidates_birth, donors)
             elif tab_name in ["Geographic Distribution"]:
-                page_functions[tab_name]()
+                page_functions[tab_name](data, weight_range, age_range, gender, district, selected_eligigility)
             elif tab_name == "Health Conditions":
-                page_functions[tab_name](data, weight_range, age_range, gender, district)
+                page_functions[tab_name](data, weight_range, age_range, gender, district, selected_eligigility)
             elif tab_name == "Donor Profiles":
-                page_functions[tab_name](data, weight_range, age_range, gender, district)
+                page_functions[tab_name](data, weight_range, age_range, gender, district, selected_eligigility)
             elif tab_name == "Eligibility Prediction":
                 page_functions[tab_name]()
             elif tab_name == "Data Collection":
                 page_functions[tab_name](geo_data)
             elif tab_name == "Sentiment Analysis":
-                page_functions[tab_name](donor_candidates_birth)
+                page_functions[tab_name](data, weight_range, age_range, gender, district, selected_eligigility)
             elif tab_name == "Donor Retention":
                 page_functions[tab_name](data)
             elif tab_name in ["Campaign Effectiveness"]:
