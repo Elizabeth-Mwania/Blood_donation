@@ -10,7 +10,7 @@ import pandas as pd
 
 # UI Component Functions
 def render_header():
-    col1,col2 = st.columns(2)
+    col1,col2, spacer, col3 = st.columns([1,1,0.5,1])
     with col1:
         st.image("Images/blood2.png", width= 200)
     with col2:
@@ -59,6 +59,8 @@ def render_header():
                 </div>
             </div>
         """, unsafe_allow_html=True)
+    with col3:
+        st.image("Images/indabaX.jpeg", width= 200)
 
 def render_styles():
     st.markdown("""
@@ -92,8 +94,6 @@ st.markdown("""
     .stButton>button:hover { background-color: #45a049; }
     </style>
 """, unsafe_allow_html=True)
-
-st.title("Blood Donation Campaign Dashboard")
 
 # Upload GeoJSON file
 #uploaded_file = st.file_uploader("Choose a GeoJSON file", type="json")
@@ -243,10 +243,3 @@ if data is not None:
         
         # Display the map
         folium_static(m)
-        
-        # Display color legend
-        st.subheader('**Arrondissement Colors**')
-        for arr, color in color_map.items():
-            # Only show legend for displayed places
-            if not selected_places or arr in selected_places:
-                st.markdown(f"<div style='background-color:{color};padding:5px;margin:2px;'>{arr}</div>", unsafe_allow_html=True)

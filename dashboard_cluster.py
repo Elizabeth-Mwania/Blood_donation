@@ -7,7 +7,7 @@ import streamlit as st
 
 # UI Component Functions
 def render_header():
-    col1,col2 = st.columns(2)
+    col1,col2, spacer, col3 = st.columns([1,1,0.5,1])
     with col1:
         st.image("Images/blood2.png", width= 200)
     with col2:
@@ -56,6 +56,8 @@ def render_header():
                 </div>
             </div>
         """, unsafe_allow_html=True)
+    with col3:
+        st.image("Images/indabaX.jpeg", width= 200)
 
 def render_styles():
     st.markdown("""
@@ -90,7 +92,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Blood Donation Campaign Dashboard")
 
 # Charger le jeu de données
 df = pd.read_csv("data/data_2019_cleaned.csv")
@@ -154,11 +155,7 @@ profession_groups = {
 # Appliquer le regroupement
 df_eligible["Profession_Groupe"] = df_eligible["Profession"].map(profession_groups).fillna("Autres")
 
-# Supprimer l'ancienne colonne
-#df.drop(columns=["Profession"], inplace=True)
-
 # Nettoyer les valeurs de la colonne "Taux d'hemoglobine"
-#df_eligible["Taux dhemoglobine"] = df_eligible["Taux dhemoglobine"].str.replace(" ", "", regex=True)  # Supprimer les espaces
 df_eligible["Taux dhemoglobine"] = pd.to_numeric(df_eligible["Taux dhemoglobine"], errors='coerce')  # Convertir en float
 
 # Sélection des variables utiles
@@ -179,7 +176,6 @@ df_scaled = scaler.fit_transform(df_eligible_clustering)
 # Appliquer le clustering K-Means (choisir un nombre de clusters, ex: k=4)
 kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
 df_eligible["Cluster"] = kmeans.fit_predict(df_scaled)
-#print(df_eligible)
 # Affichage du nombre de personnes par cluster
 print(df_eligible["Cluster"].value_counts())
 
@@ -213,19 +209,38 @@ Mode_Keys = list(mode_characteristics.keys())
 Mode_values = list(mode_characteristics.values())
 print(mode_characteristics)
 
+# Calculate ranges only
+top_ages = df_cluster_dominant["Age"].value_counts().head(5)
+age_values = top_ages.index.tolist()
+age_range = f"{min(age_values)} - {max(age_values)} ans"
+
+top_haemoglobin = df_cluster_dominant["Taux dhemoglobine"].round(1).value_counts().head(5)
+hb_values = top_haemoglobin.index.tolist()
+hb_range = f"{min(hb_values)} - {max(hb_values)} g/dL"
+
+top_weights = df_cluster_dominant["Poids"].round(1).value_counts().head(5)
+wt_values = top_weights.index.tolist()
+wt_range = f"{min(wt_values)} - {max(wt_values)} kg"
+
+
+
 if mean_characteristics is not None and mode_characteristics is not None:
-    result_row = st.columns(2)
+    result_row = st.columns(1)
     with result_row[0]:
-        st.markdown(f'''<div class="metric-container2">
-                    <h3>Minimal characteristics</h3>
-                    <p class="highlight" style="font-size: 2rem;">Profile :<br> {Mean_Keys[0]} : {Mean_values[0]}<br>{Mean_Keys[1]} : {Mean_values[1]}</p>
-                    <p class="highlight" style="font-size: 2rem;">{Mean_Keys[2]} : {Mean_values[2]}<br>{Mean_Keys[3]} : {Mean_values[3]}</p>
-                    </div>''', unsafe_allow_html=True)
-    with result_row[1]:
-        st.markdown(f'''<div class="metric-container2">
-                    <h3>Dominant characteristics</h3>
-                    <p class="highlight" style="font-size: 2rem;">Profile :<br> {Mode_Keys[0]} : {Mode_values[0]}<br>{Mode_Keys[1]} : {Mode_values[1]}</p>
-                    <p class="highlight" style="font-size: 2rem;">{Mode_Keys[2]} : {Mode_values[2]}<br>{Mode_Keys[3]} : {Mode_values[3]}</p>
-                    </div>''', unsafe_allow_html=True)
+        # Display ranges on Streamlit
+        st.markdown(f"""
+        <div class="metric-container2">
+            <h3>Minimal characteristics of an ideal donor</h3>
+            <ul style="font-size: 1.3rem;">
+                <li><strong>Âge</strong> : {age_range}</li>
+                <li><strong>Taux d'hémoglobine</strong> : {hb_range}</li>
+                <li><strong>Poids</strong> : {wt_range}</li>
+                <li><strong>{Mode_Keys[0]}</strong> : {Mode_values[0]}</li>
+                <li><strong>{Mode_Keys[2]}</strong> : {Mode_values[2]}</li>
+                <li><strong>{Mode_Keys[3]}</strong> : {Mode_values[3]}</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 
